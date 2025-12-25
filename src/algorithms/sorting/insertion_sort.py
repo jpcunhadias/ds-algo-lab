@@ -38,6 +38,7 @@ class InsertionSort(BaseAlgorithm):
 
         for i in range(1, n):
             key = data[i]
+            key_position = i  # Track where the key slot is (moves left as we shift)
             j = i - 1
 
             step_number += 1
@@ -64,13 +65,35 @@ class InsertionSort(BaseAlgorithm):
                     "step_number": step_number,
                     "description": f"Comparing {data[j]} with {key}",
                     "data_structure": Array(data.copy()),
-                    "comparing": [j, i],
+                    "comparing": [j, key_position],
                     "swapping": [],
                     "sorted": sorted_indices.copy(),
-                    "current": [j, i],
+                    "current": [j, key_position],
                 }
 
+                # Shift element to the right
+                # Store the value being shifted BEFORE the shift
+                shifted_value = data[j]
+                # Perform the shift
                 data[j + 1] = data[j]
+                # Update key position (the slot where key will go moves left)
+                key_position = j
+
+                step_number += 1
+
+                # Yield step: shifting element (show updated state AFTER shift)
+                # IMPORTANT: Use data.copy() AFTER the shift to show updated array
+                yield {
+                    "algorithm": self._name,
+                    "step_number": step_number,
+                    "description": f"Shifting {shifted_value} from index {j} to {j + 1}",
+                    "data_structure": Array(data.copy()),  # Copy AFTER shift - shows updated array
+                    "comparing": [],
+                    "swapping": [j, j + 1],  # Highlight both positions involved in shift
+                    "sorted": sorted_indices.copy(),
+                    "current": [j + 1],  # Show where element was shifted to
+                }
+
                 j -= 1
 
             # Insert key at correct position

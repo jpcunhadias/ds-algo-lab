@@ -50,6 +50,8 @@ class AlgorithmVisualizer(BaseVisualizer):
         if ax is not None:
             self._axes = ax
             self._figure = fig
+            # Clear axes when reusing (important for animation updates)
+            self._axes.clear()
         else:
             # Create figure only if not provided
             self._figure, self._axes = plt.subplots(figsize=(12, 6))
