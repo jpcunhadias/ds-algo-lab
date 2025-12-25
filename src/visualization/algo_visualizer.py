@@ -26,7 +26,11 @@ class AlgorithmVisualizer(BaseVisualizer):
         self._current_step_index = 0
 
     def visualize(
-        self, data_structure: BaseDataStructure, step: Optional[Dict[str, Any]] = None
+        self,
+        data_structure: BaseDataStructure,
+        step: Optional[Dict[str, Any]] = None,
+        ax=None,
+        fig=None,
     ):
         """
         Visualize the current state during algorithm execution.
@@ -34,14 +38,22 @@ class AlgorithmVisualizer(BaseVisualizer):
         Args:
             data_structure: The data structure being operated on
             step: Step information containing algorithm state
+            ax: Optional matplotlib axes to draw on (if None, creates new figure)
+            fig: Optional matplotlib figure (used with ax)
         """
         import matplotlib.pyplot as plt
 
         if step is None:
             return
 
-        # Create figure
-        self._figure, self._axes = plt.subplots(figsize=(12, 6))
+        # Use provided axes or create new figure
+        if ax is not None:
+            self._axes = ax
+            self._figure = fig
+        else:
+            # Create figure only if not provided
+            self._figure, self._axes = plt.subplots(figsize=(12, 6))
+
         self._axes.set_xlim(-1, max(len(data_structure), 10))
         self._axes.set_ylim(-0.5, 2.5)
         self._axes.set_aspect("equal")
@@ -55,13 +67,13 @@ class AlgorithmVisualizer(BaseVisualizer):
         elif "search" in algo_type.lower():
             self._visualize_searching_step(data_structure, step)
 
-        # Add title with step info
-        title = f"{algo_type} - Step {step.get('step_number', 'N/A')}"
-        if "description" in step:
-            title += f": {step['description']}"
-        self._axes.set_title(title, fontsize=14, fontweight="bold")
-
-        plt.tight_layout()
+        # Add title with step info (only if we created the figure ourselves)
+        if ax is None:
+            title = f"{algo_type} - Step {step.get('step_number', 'N/A')}"
+            if "description" in step:
+                title += f": {step['description']}"
+            self._axes.set_title(title, fontsize=14, fontweight="bold")
+            plt.tight_layout()
 
     def _visualize_sorting_step(
         self, data_structure: BaseDataStructure, step: Dict[str, Any]

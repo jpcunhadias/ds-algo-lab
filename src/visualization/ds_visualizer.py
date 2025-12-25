@@ -56,6 +56,12 @@ class DataStructureVisualizer(BaseVisualizer):
             self._visualize_stack(data_structure)
         elif ds_type == "Queue":
             self._visualize_queue(data_structure)
+        elif ds_type in ["BinaryTree", "BinarySearchTree", "AVLTree"]:
+            self._visualize_tree(data_structure)
+        elif ds_type == "Graph":
+            self._visualize_graph(data_structure)
+        elif ds_type == "HashTable":
+            self._visualize_hash_table(data_structure)
 
         # Add title
         title = f"{ds_type} Visualization"
@@ -132,6 +138,8 @@ class DataStructureVisualizer(BaseVisualizer):
 
     def _visualize_stack(self, data_structure: BaseDataStructure):
         """Visualize a stack."""
+        import matplotlib.patches as patches
+
         data = self._current_state["data"] if self._current_state is not None else []
 
         if not data:
@@ -227,6 +235,177 @@ class DataStructureVisualizer(BaseVisualizer):
                 self.visualize(step["data_structure"], {"step_number": i + 1})
                 plt.pause(0.5)  # Pause between steps
                 plt.clf()
+
+    def _visualize_tree(self, data_structure: BaseDataStructure):
+        """Visualize a binary tree."""
+        import matplotlib.patches as patches
+
+        data = self._current_state["data"] if self._current_state is not None else []
+
+        if not data:
+            self._axes.text(0, 0, "Empty Tree", ha="center", va="center", fontsize=12)
+            return
+
+        # Adjust axes for tree visualization
+        self._axes.set_xlim(-2, max(len(data) * 2, 10))
+        self._axes.set_ylim(-1, 5)
+
+        # Simple tree visualization - level order representation
+        # For a more sophisticated visualization, we'd need tree structure
+        y_levels = [4, 3, 2, 1, 0]
+        x_positions = {}
+
+        # Calculate positions (simplified - assumes complete tree)
+        level = 0
+        x = 0
+
+        for i, value in enumerate(data):
+            if value is None:
+                continue
+
+            # Calculate position
+            if i == 0:
+                x = 0
+            else:
+                # Simple positioning
+                parent_idx = (i - 1) // 2
+                is_left = i % 2 == 1
+                if parent_idx in x_positions:
+                    parent_x = x_positions[parent_idx][0]
+                    spacing = 2 / (2**level)
+                    x = parent_x - spacing if is_left else parent_x + spacing
+
+            y = y_levels[min(level, len(y_levels) - 1)]
+            x_positions[i] = (x, y)
+
+            # Draw node
+            circle = patches.Circle(
+                (x, y), 0.3, linewidth=2, edgecolor="black", facecolor="lightgreen"
+            )
+            self._axes.add_patch(circle)
+            self._axes.text(x, y, str(value), ha="center", va="center", fontsize=10)
+
+            # Draw connection to parent
+            if i > 0:
+                parent_idx = (i - 1) // 2
+                if parent_idx in x_positions:
+                    px, py = x_positions[parent_idx]
+                    self._axes.plot([px, x], [py - 0.3, y + 0.3], "k-", linewidth=1)
+
+            # Move to next level if needed
+            if i + 1 >= 2 ** (level + 1) - 1:
+                level += 1
+
+    def _visualize_graph(self, data_structure: BaseDataStructure):
+        """Visualize a graph."""
+        import math
+
+        import matplotlib.patches as patches
+
+        state = self._current_state if self._current_state is not None else {}
+        adjacency_list = state.get("data", {})
+
+        if not adjacency_list:
+            self._axes.text(0, 0, "Empty Graph", ha="center", va="center", fontsize=12)
+            return
+
+        # Adjust axes
+        num_vertices = len(adjacency_list)
+        self._axes.set_xlim(-2, num_vertices + 2)
+        self._axes.set_ylim(-2, num_vertices + 2)
+
+        # Position vertices in a circle
+        vertices = list(adjacency_list.keys())
+        positions = {}
+        radius = num_vertices / 2 if num_vertices > 1 else 1
+        center_x, center_y = num_vertices / 2, num_vertices / 2
+
+        for i, vertex in enumerate(vertices):
+            angle = 2 * math.pi * i / num_vertices if num_vertices > 1 else 0
+            x = center_x + radius * math.cos(angle)
+            y = center_y + radius * math.sin(angle)
+            positions[vertex] = (x, y)
+
+        # Draw edges
+        for vertex, neighbors in adjacency_list.items():
+            if vertex in positions:
+                vx, vy = positions[vertex]
+                for neighbor in neighbors:
+                    if neighbor in positions:
+                        nx, ny = positions[neighbor]
+                        self._axes.plot(
+                            [vx, nx], [vy, ny], "b-", linewidth=1, alpha=0.5
+                        )
+
+        # Draw vertices
+        for vertex, (x, y) in positions.items():
+            circle = patches.Circle(
+                (x, y), 0.4, linewidth=2, edgecolor="black", facecolor="lightblue"
+            )
+            self._axes.add_patch(circle)
+            self._axes.text(
+                x,
+                y,
+                str(vertex),
+                ha="center",
+                va="center",
+                fontsize=10,
+                fontweight="bold",
+            )
+
+    def _visualize_hash_table(self, data_structure: BaseDataStructure):
+        """Visualize a hash table."""
+        import matplotlib.patches as patches
+
+        state = self._current_state if self._current_state is not None else {}
+        items = state.get("data", {})
+
+        if not items:
+            self._axes.text(
+                0, 0, "Empty Hash Table", ha="center", va="center", fontsize=12
+            )
+            return
+
+        # Adjust axes
+        num_buckets = max(len(items), 8)
+        self._axes.set_xlim(-1, num_buckets)
+        self._axes.set_ylim(-0.5, 3)
+
+        # Draw buckets
+        bucket_width = 0.8
+        for i in range(num_buckets):
+            x = i
+            rect = patches.Rectangle(
+                (x - bucket_width / 2, 0),
+                bucket_width,
+                2,
+                linewidth=2,
+                edgecolor="black",
+                facecolor="lightgray",
+            )
+            self._axes.add_patch(rect)
+            self._axes.text(x, 2.2, f"Bucket {i}", ha="center", va="center", fontsize=9)
+
+        # Place items in buckets (simplified - just show items)
+        y_offset = 1.5
+        for i, (key, value) in enumerate(items.items()):
+            bucket_idx = i % num_buckets
+            x = bucket_idx
+            y = y_offset - (i // num_buckets) * 0.3
+
+            # Draw key-value pair
+            rect = patches.Rectangle(
+                (x - bucket_width / 2 + 0.1, y - 0.1),
+                bucket_width - 0.2,
+                0.2,
+                linewidth=1,
+                edgecolor="blue",
+                facecolor="lightblue",
+            )
+            self._axes.add_patch(rect)
+            self._axes.text(
+                x, y, f"{key}:{value}", ha="center", va="center", fontsize=8
+            )
 
     def interactive_mode(self):
         """
