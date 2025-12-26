@@ -3,7 +3,8 @@ Tree algorithm playground for interactive exploration.
 Supports Binary Tree, BST, and AVL Tree.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from .base import Playground
 
 
@@ -70,15 +71,20 @@ class TreePlayground(Playground):
 
         # Add final state step
         step_counter += 1
-        self._initialization_steps.append({
-            "operation": "initialization_complete",
-            "step_number": step_counter,
-            "description": f"Tree construction complete. Inserted {len(data)} values.",
-            "data_structure": self.tree,
-            "current_node": None,
-            "highlighted_nodes": [],
-            "initialization": True,
-        })
+        self._initialization_steps.append(
+            {
+                "algorithm": f"{self.tree_type.upper()} Construction",
+                "operation": "initialization_complete",
+                "step_number": step_counter,
+                "description": f"Tree construction complete. Inserted {len(data)} values. "
+                f"Final tree size: {len(self.tree)} nodes. "
+                f"BST property maintained.",
+                "data_structure": self.tree,
+                "current_node": None,
+                "highlighted_nodes": [],
+                "initialization": True,
+            }
+        )
 
         if show_initialization and len(self._initialization_steps) > 0:
             self.visualize_initialization(interactive=True, auto_show=True)
@@ -105,9 +111,12 @@ class TreePlayground(Playground):
         step_number += 1
         steps.append(
             {
+                "algorithm": f"{self.tree_type.upper()} Insert",
                 "operation": "insert",
                 "step_number": step_number,
-                "description": f"Inserting {value}",
+                "description": f"Inserting {value}. "
+                f"Following BST property: comparing with nodes along path to find insertion point. "
+                f"Path length: {len(path)} comparisons.",
                 "data_structure": self.tree,
                 "current_node": value,
                 "highlighted_nodes": path,
@@ -120,9 +129,12 @@ class TreePlayground(Playground):
         step_number += 1
         steps.append(
             {
+                "algorithm": f"{self.tree_type.upper()} Insert",
                 "operation": "insert",
                 "step_number": step_number,
-                "description": f"Inserted {value}",
+                "description": f"Successfully inserted {value}. "
+                f"BST property maintained. "
+                f"Tree size: {len(self.tree)} nodes.",
                 "data_structure": self.tree,
                 "current_node": None,
                 "highlighted_nodes": [],
@@ -143,7 +155,6 @@ class TreePlayground(Playground):
         """
         path = []
         if self.tree_type == "bst":
-            from ..data_structures.binary_search_tree import TreeNode
 
             def traverse(node, val):
                 if node is None:
@@ -188,9 +199,11 @@ class TreePlayground(Playground):
             step_number += 1
             steps.append(
                 {
+                    "algorithm": f"{self.tree_type.upper()} Delete",
                     "operation": "delete",
                     "step_number": step_number,
-                    "description": f"Value {value} not found",
+                    "description": f"Value {value} not found in tree. "
+                    f"Cannot delete a value that doesn't exist.",
                     "data_structure": self.tree,
                     "current_node": None,
                     "highlighted_nodes": [],
@@ -204,9 +217,12 @@ class TreePlayground(Playground):
         step_number += 1
         steps.append(
             {
+                "algorithm": f"{self.tree_type.upper()} Delete",
                 "operation": "delete",
                 "step_number": step_number,
-                "description": f"Deleting {value}",
+                "description": f"Deleting {value}. "
+                f"Finding node to delete: comparing with nodes along path. "
+                f"Path length: {len(path)} comparisons.",
                 "data_structure": self.tree,
                 "current_node": value,
                 "highlighted_nodes": path,
@@ -219,9 +235,12 @@ class TreePlayground(Playground):
         step_number += 1
         steps.append(
             {
+                "algorithm": f"{self.tree_type.upper()} Delete",
                 "operation": "delete",
                 "step_number": step_number,
-                "description": f"Deleted {value}",
+                "description": f"Successfully deleted {value}. "
+                f"BST property maintained after deletion. "
+                f"Tree size: {len(self.tree)} nodes.",
                 "data_structure": self.tree,
                 "current_node": None,
                 "highlighted_nodes": [],
@@ -273,14 +292,20 @@ class TreePlayground(Playground):
         found = self.tree.search(value) is not None
 
         step_number += 1
+        found_text = "Found" if found else "Not found"
         steps.append(
             {
+                "algorithm": f"{self.tree_type.upper()} Search",
                 "operation": "search",
                 "step_number": step_number,
-                "description": f"Searching for {value}",
+                "description": f"Searching for {value}. "
+                f"Following BST property: comparing with nodes along path. "
+                f"Path length: {len(path)} comparisons. "
+                f"Result: {found_text}.",
                 "data_structure": self.tree,
                 "current_node": value if found else None,
                 "highlighted_nodes": path,
+                "found": found,
             }
         )
 
@@ -320,9 +345,12 @@ class TreePlayground(Playground):
             step_number += 1
             steps.append(
                 {
+                    "algorithm": f"Tree Traversal ({traversal_type})",
                     "operation": f"traversal_{traversal_type}",
                     "step_number": step_number,
-                    "description": f"{traversal_type.title()} traversal: visiting {value}",
+                    "description": f"{traversal_type.title()} traversal: visiting {value}. "
+                    f"Step {i + 1}/{len(traversal_order)}. "
+                    f"Traversal visits all nodes in {traversal_type} order.",
                     "data_structure": self.tree,
                     "current_node": value,
                     "traversal_path": traversal_order[: i + 1],
@@ -332,24 +360,138 @@ class TreePlayground(Playground):
 
         return steps
 
-    def visualize_initialization(self, interactive: bool = True, auto_show: bool = True) -> None:
+    def visualize_initialization(
+        self, interactive: bool = True, auto_show: bool = True
+    ) -> None:
         """
         Visualize how input data was transformed into the tree structure.
 
         Shows step-by-step tree construction with insertion paths.
+        After visualization closes, shows operation menu for testing methods.
 
         Args:
             interactive: Whether to use interactive controls (True) or animated playback (False)
             auto_show: Whether to automatically show the visualization (for CLI integration)
         """
         if self._initialization_steps is None or len(self._initialization_steps) == 0:
-            print("No initialization steps available. Tree may not have been initialized with input data.")
+            print(
+                "No initialization steps available. Tree may not have been initialized with input data."
+            )
             return
 
         print(f"\nBuilding {self.tree_type} tree from input...")
         print(f"Showing {len(self._initialization_steps)} initialization steps\n")
 
-        self.visualize(self._initialization_steps, interactive=interactive)
+        if interactive:
+            # Set up callback to show operation menu after visualization closes
+            # Use a flag to prevent multiple menu calls
+            if not hasattr(self, '_menu_shown'):
+                self._menu_shown = False
+
+            def on_close():
+                # Prevent multiple menu calls if window is closed multiple times
+                if self._menu_shown:
+                    return
+                self._menu_shown = True
+                try:
+                    self._show_operation_menu()
+                except KeyboardInterrupt:
+                    # Handle Ctrl+C gracefully - don't show menu
+                    print("\nVisualization interrupted.")
+                    return
+                finally:
+                    # Reset flag after menu completes/exits
+                    self._menu_shown = False
+
+            # Create controls with close callback
+            from ..visualization.interactive_controls import InteractiveControls
+            from ..visualization.tree_visualizer import TreeVisualizer
+
+            visualizer = TreeVisualizer()
+            controls = InteractiveControls(
+                self._initialization_steps,
+                visualizer,
+                on_close_callback=on_close,
+            )
+            try:
+                controls.show()
+            except KeyboardInterrupt:
+                print("\nVisualization interrupted.")
+                return
+        else:
+            self.visualize(self._initialization_steps, interactive=False)
+
+    def _show_operation_menu(self):
+        """Show CLI operation menu after initialization visualization closes."""
+        import click
+
+        available_ops = self.get_available_algorithms()
+        if not available_ops:
+            return
+
+        # Loop menu until user exits
+        while True:
+            print(f"\n{'=' * 60}")
+            print(f"{self.tree_type.upper()} Tree Operations")
+            print(f"{'=' * 60}")
+            print("\nAvailable operations:")
+            for i, op in enumerate(available_ops, 1):
+                print(f"  {i}. {op.title()}")
+            print(f"  {len(available_ops) + 1}. Exit")
+
+            try:
+                choice = click.prompt("\nSelect operation", type=int)
+
+                if choice < 1 or choice > len(available_ops) + 1:
+                    print("Invalid choice.")
+                    continue
+
+                if choice == len(available_ops) + 1:
+                    print("Exiting.")
+                    return
+
+                operation = available_ops[choice - 1]
+
+                try:
+                    if operation == "insert":
+                        value = click.prompt("Enter value to insert", type=int)
+                        steps = self.insert(value)
+                        self.visualize(steps, interactive=True)
+                    elif operation == "delete":
+                        value = click.prompt("Enter value to delete", type=int)
+                        steps = self.delete(value)
+                        self.visualize(steps, interactive=True)
+                    elif operation == "search":
+                        value = click.prompt("Enter value to search for", type=int)
+                        steps = self.search(value)
+                        self.visualize(steps, interactive=True)
+                    elif operation == "traverse":
+                        traversal_type = click.prompt(
+                            "Traversal type",
+                            type=click.Choice(
+                                ["inorder", "preorder", "postorder", "levelorder"]
+                            ),
+                            default="inorder",
+                        )
+                        steps = self.traverse(traversal_type)
+                        self.visualize(steps, interactive=True)
+                    else:
+                        print(f"Unknown operation: {operation}")
+                except KeyboardInterrupt:
+                    # User interrupted during visualization - return to menu
+                    print("\nVisualization interrupted. Returning to menu...")
+                    continue
+                except EOFError:
+                    # User pressed Ctrl+D - exit
+                    print("\nExiting.")
+                    return
+            except (KeyboardInterrupt, EOFError):
+                # User interrupted during menu selection - exit
+                print("\nExiting.")
+                return
+            except Exception as e:
+                print(f"Error: {e}")
+                # Continue to show menu again after error
 
     def visualize(self, steps: List[Dict[str, Any]], interactive: bool = True) -> None:
         """
@@ -371,7 +513,11 @@ class TreePlayground(Playground):
             from ..visualization.interactive_controls import InteractiveControls
 
             controls = InteractiveControls(steps, visualizer)
-            controls.show()
+            try:
+                controls.show()
+            except KeyboardInterrupt:
+                print("\nVisualization interrupted.")
+                raise  # Re-raise to be caught by caller
         else:
             visualizer.animate(steps)
 
@@ -416,7 +562,9 @@ class TreePlayground(Playground):
         """
         return ["insert", "delete", "search", "traverse"]
 
-    def demo(self, operation: str = "insert", values: Optional[List[Any]] = None) -> None:
+    def demo(
+        self, operation: str = "insert", values: Optional[List[Any]] = None
+    ) -> None:
         """
         Run a quick demonstration.
 
@@ -459,4 +607,3 @@ class TreePlayground(Playground):
             "highlighted_nodes": [],
         }
         self.visualize([final_step], interactive=True)
-

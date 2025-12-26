@@ -4,6 +4,7 @@ Provides hierarchical tree visualizations with operation highlighting and traver
 """
 
 from typing import Any, Dict, List, Optional, Tuple
+
 from .base import BaseDataStructure, BaseVisualizer
 
 
@@ -17,9 +18,9 @@ class TreeVisualizer(BaseVisualizer):
         """Initialize the tree visualizer."""
         super().__init__()
         self._node_positions: Dict[Any, Tuple[float, float]] = {}
-        self._node_radius = 0.3
-        self._level_height = 1.5
-        self._min_node_spacing = 1.5
+        self._node_radius = 0.35  # Slightly larger for better visibility
+        self._level_height = 1.8  # More vertical spacing
+        self._min_node_spacing = 2.0  # Increased horizontal spacing to prevent overlap
 
     def visualize(
         self,
@@ -38,7 +39,6 @@ class TreeVisualizer(BaseVisualizer):
             fig: Optional matplotlib figure
         """
         import matplotlib.pyplot as plt
-        import matplotlib.patches as patches
 
         if ax is not None:
             self._axes = ax
@@ -52,7 +52,13 @@ class TreeVisualizer(BaseVisualizer):
 
         if tree_data is None:
             self._axes.text(
-                0, 0, "Empty Tree", ha="center", va="center", fontsize=14, fontweight="bold"
+                0,
+                0,
+                "Empty Tree",
+                ha="center",
+                va="center",
+                fontsize=14,
+                fontweight="bold",
             )
             self._axes.axis("off")
             return
@@ -61,7 +67,13 @@ class TreeVisualizer(BaseVisualizer):
         root = self._deserialize_tree(tree_data)
         if root is None:
             self._axes.text(
-                0, 0, "Empty Tree", ha="center", va="center", fontsize=14, fontweight="bold"
+                0,
+                0,
+                "Empty Tree",
+                ha="center",
+                va="center",
+                fontsize=14,
+                fontweight="bold",
             )
             self._axes.axis("off")
             return
@@ -188,15 +200,23 @@ class TreeVisualizer(BaseVisualizer):
             left_width = get_subtree_width(node.left)
             right_width = get_subtree_width(node.right)
 
-            # Position left subtree
+            # Position left subtree with better spacing
             if node.left is not None:
-                left_x = x - (right_width + 1) * self._min_node_spacing / 2
-                x = assign_positions(node.left, left_x, y - self._level_height, level + 1)
+                # Use wider spacing to prevent overlap
+                spacing_factor = max(1.0, (right_width + left_width) * 0.5)
+                left_x = x - spacing_factor * self._min_node_spacing
+                x = assign_positions(
+                    node.left, left_x, y - self._level_height, level + 1
+                )
 
-            # Position right subtree
+            # Position right subtree with better spacing
             if node.right is not None:
-                right_x = x + self._min_node_spacing
-                x = assign_positions(node.right, right_x, y - self._level_height, level + 1)
+                # Ensure minimum spacing between subtrees
+                spacing_factor = max(1.0, (right_width + left_width) * 0.5)
+                right_x = x + spacing_factor * self._min_node_spacing
+                x = assign_positions(
+                    node.right, right_x, y - self._level_height, level + 1
+                )
 
             return x
 
@@ -259,7 +279,10 @@ class TreeVisualizer(BaseVisualizer):
                     edge_width = 2
 
                 self._axes.plot(
-                    [start_x, end_x], [start_y, end_y], color=edge_color, linewidth=edge_width
+                    [start_x, end_x],
+                    [start_y, end_y],
+                    color=edge_color,
+                    linewidth=edge_width,
                 )
 
         # Recursively draw edges
@@ -343,15 +366,20 @@ class TreeVisualizer(BaseVisualizer):
             )
             self._axes.add_patch(circle)
 
-            # Add value text
+            # Add value text with better font size and clarity
+            font_size = 11  # Increased from default for better readability
+            font_weight = "bold"
+            # Use darker color for better contrast
+            text_color = "black" if color != "yellow" else "darkblue"
             self._axes.text(
                 x,
                 y,
                 str(node.value),
                 ha="center",
                 va="center",
-                fontsize=11,
-                fontweight="bold",
+                fontsize=font_size,
+                fontweight=font_weight,
+                color=text_color,
             )
 
             # Add balance factor for AVL trees
@@ -362,7 +390,9 @@ class TreeVisualizer(BaseVisualizer):
 
                     if isinstance(data_structure, AVLTree):
                         # Find the node in the tree to get balance factor
-                        node_obj = self._find_node_in_tree(data_structure._root, node.value)
+                        node_obj = self._find_node_in_tree(
+                            data_structure._root, node.value
+                        )
                         if node_obj:
                             balance = data_structure._balance_factor(node_obj)
                             self._axes.text(
@@ -398,7 +428,9 @@ class TreeVisualizer(BaseVisualizer):
             return left
         return self._find_node_in_tree(root.right, value)
 
-    def visualize_insert(self, data_structure: BaseDataStructure, value: Any, path: List[Any]):
+    def visualize_insert(
+        self, data_structure: BaseDataStructure, value: Any, path: List[Any]
+    ):
         """
         Visualize insertion operation.
 
@@ -434,7 +466,9 @@ class TreeVisualizer(BaseVisualizer):
         }
         self.visualize(data_structure, step)
 
-    def visualize_search(self, data_structure: BaseDataStructure, value: Any, path: List[Any]):
+    def visualize_search(
+        self, data_structure: BaseDataStructure, value: Any, path: List[Any]
+    ):
         """
         Visualize search operation.
 
@@ -528,4 +562,3 @@ class TreeVisualizer(BaseVisualizer):
 
         plt.tight_layout()
         plt.show()
-

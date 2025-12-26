@@ -2,11 +2,12 @@
 Visual tutorial system focused on demonstrations.
 """
 
-from typing import List, Dict, Any, Optional
-from .base import Tutorial, TutorialStep, StepType
-from ..data_structures.array import Array
-from ..visualization.interactive_controls import InteractiveControls
+from typing import Any, Dict, List, Optional
+
 from ..visualization.algo_visualizer import AlgorithmVisualizer
+from ..visualization.interactive_controls import InteractiveControls
+from .algorithm_explanations import AlgorithmExplanations
+from .base import StepType, Tutorial, TutorialStep
 
 
 class VisualTutorial(Tutorial):
@@ -31,7 +32,7 @@ class VisualTutorial(Tutorial):
         description: str,
         code_example: Optional[str] = None,
         algorithm_steps: Optional[List[Dict[str, Any]]] = None,
-        interactive: bool = True
+        interactive: bool = True,
     ) -> None:
         """
         Add a visual demonstration step.
@@ -53,13 +54,15 @@ class VisualTutorial(Tutorial):
         self.add_step(step)
 
         # Store demonstration data
-        self.demonstrations.append({
-            'title': title,
-            'description': description,
-            'code_example': code_example,
-            'algorithm_steps': algorithm_steps,
-            'interactive': interactive,
-        })
+        self.demonstrations.append(
+            {
+                "title": title,
+                "description": description,
+                "code_example": code_example,
+                "algorithm_steps": algorithm_steps,
+                "interactive": interactive,
+            }
+        )
 
     def show_demonstration(self, step_index: int) -> None:
         """
@@ -73,53 +76,79 @@ class VisualTutorial(Tutorial):
             return
 
         demo = self.demonstrations[step_index]
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Demonstration: {demo['title']}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         print(f"\n{demo['description']}")
 
-        if demo['code_example']:
-            print(f"\nCode Example:")
-            print(demo['code_example'])
+        # Show algorithm explanation if available
+        # Try to extract algorithm name from steps
+        algorithm_name = demo.get("algorithm_name", "")
+        if not algorithm_name and demo.get("algorithm_steps"):
+            algorithm_name = (
+                demo["algorithm_steps"][0].get("algorithm", "")
+                if demo["algorithm_steps"]
+                else ""
+            )
 
-        if demo['algorithm_steps']:
-            print(f"\nVisualizing algorithm steps...")
+        if algorithm_name:
+            explanation = AlgorithmExplanations.get_explanation(algorithm_name)
+            if explanation:
+                print("\nAlgorithm Overview:")
+                print(f"  {explanation.overview}")
+                print("\nKey Concepts:")
+                for concept in explanation.key_concepts[:3]:  # Show first 3
+                    print(f"  • {concept}")
+
+        if demo["code_example"]:
+            print("\nCode Example:")
+            print(demo["code_example"])
+
+        if demo["algorithm_steps"]:
+            print("\nVisualizing algorithm steps...")
             visualizer = AlgorithmVisualizer()
 
-            if demo['interactive']:
-                controls = InteractiveControls(demo['algorithm_steps'], visualizer)
+            if demo["interactive"]:
+                # Use enhanced interactive controls with code overlay and variable tracker
+                controls = InteractiveControls(
+                    demo["algorithm_steps"],
+                    visualizer,
+                    show_code_overlay=True,
+                    show_variable_tracker=True,
+                    show_performance_panel=True,
+                    show_insights=True,
+                )
                 controls.show()
             else:
-                visualizer.animate(demo['algorithm_steps'])
+                visualizer.animate(demo["algorithm_steps"])
 
     def run_tutorial(self) -> None:
         """Run the complete tutorial interactively."""
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Tutorial: {self.title}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         print(f"\n{self.description}\n")
 
         for i, step in enumerate(self.steps):
-            print(f"\nStep {i+1}/{len(self.steps)}: {step.title}")
+            print(f"\nStep {i + 1}/{len(self.steps)}: {step.title}")
             print("-" * 60)
             print(step.content)
 
             if step.code:
-                print(f"\nCode:")
+                print("\nCode:")
                 print(step.code)
 
             # Check if this step has a demonstration
             if i < len(self.demonstrations):
                 demo = self.demonstrations[i]
-                if demo['algorithm_steps']:
+                if demo["algorithm_steps"]:
                     response = input("\nShow visualization? (y/n): ")
-                    if response.lower() == 'y':
+                    if response.lower() == "y":
                         self.show_demonstration(i)
 
             if i < len(self.steps) - 1:
                 input("\nPress Enter to continue to next step...")
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("Tutorial completed!")
-        print(f"{'='*60}\n")
-
+        print(f"{'=' * 60}\n")

@@ -2,9 +2,13 @@
 Side-by-side algorithm comparison viewer.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List
+
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 from matplotlib.widgets import Button, Slider
+
+from .performance_panel import PerformancePanel
 
 
 class ComparisonViewer:
@@ -19,6 +23,7 @@ class ComparisonViewer:
         self.current_step = 0
         self.playing = False
         self.animation_speed = 0.5
+        self.performance_panels: Dict[str, PerformancePanel] = {}
 
     def add_algorithm(self, algorithm, data_structure, name: str):
         """
@@ -38,12 +43,25 @@ class ComparisonViewer:
         # Execute algorithm
         steps = algorithm.execute(arr_copy, visualize=False)
 
-        self.algorithms.append({
-            'name': name,
-            'algorithm': algorithm,
-            'steps': steps,
-            'data_structure': arr_copy,
-        })
+        # Create performance panel for this algorithm
+        perf_panel = PerformancePanel()
+        # Extract theoretical complexity from insights
+        from .insights_panel import InsightsPanel
+
+        insights = InsightsPanel.get_insights(name)
+        if insights:
+            perf_panel.set_theoretical_complexity(insights.time_complexity)
+
+        self.performance_panels[name] = perf_panel
+
+        self.algorithms.append(
+            {
+                "name": name,
+                "algorithm": algorithm,
+                "steps": steps,
+                "data_structure": arr_copy,
+            }
+        )
 
     def compare(self, algorithms_config: List[Dict[str, Any]], input_data: List[Any]):
         """
@@ -60,17 +78,19 @@ class ComparisonViewer:
 
         for config in algorithms_config:
             arr = Array(input_data.copy())
-            algo = config['algorithm']
-            name = config['name']
+            algo = config["algorithm"]
+            name = config["name"]
 
             steps = algo.execute(arr, visualize=False)
 
-            self.algorithms.append({
-                'name': name,
-                'algorithm': algo,
-                'steps': steps,
-                'data_structure': arr,
-            })
+            self.algorithms.append(
+                {
+                    "name": name,
+                    "algorithm": algo,
+                    "steps": steps,
+                    "data_structure": arr,
+                }
+            )
 
     def show(self):
         """Display side-by-side comparison."""
@@ -79,12 +99,37 @@ class ComparisonViewer:
             return
 
         num_algorithms = len(self.algorithms)
-        fig, axes = plt.subplots(1, num_algorithms, figsize=(6 * num_algorithms, 6))
+        # Create figure with space for metrics
+        fig = plt.figure(figsize=(8 * num_algorithms, 10))
+
+        # Use GridSpec for better layout
+        gs = GridSpec(
+            2,
+            num_algorithms,
+            figure=fig,
+            hspace=0.4,
+            wspace=0.3,
+            left=0.05,
+            right=0.95,
+            top=0.92,
+            bottom=0.15,
+        )
+
+        axes = []
+        metric_axes = []
+
+        for i in range(num_algorithms):
+            # Visualization axes
+            ax_viz = fig.add_subplot(gs[0, i])
+            axes.append(ax_viz)
+
+            # Metrics axes
+            ax_metrics = fig.add_subplot(gs[1, i])
+            metric_axes.append(ax_metrics)
 
         if num_algorithms == 1:
             axes = [axes]
-
-        plt.subplots_adjust(bottom=0.2)
+            metric_axes = [metric_axes]
 
         # Create control buttons
         ax_prev = plt.axes([0.1, 0.05, 0.1, 0.04])
@@ -94,16 +139,17 @@ class ComparisonViewer:
         ax_reset = plt.axes([0.54, 0.05, 0.1, 0.04])
         ax_speed = plt.axes([0.65, 0.05, 0.25, 0.03])
 
-        btn_prev = Button(ax_prev, 'Previous')
-        btn_play = Button(ax_play, 'Play')
-        btn_pause = Button(ax_pause, 'Pause')
-        btn_next = Button(ax_next, 'Next')
-        btn_reset = Button(ax_reset, 'Reset')
-        slider_speed = Slider(ax_speed, 'Speed', 0.1, 2.0, valinit=self.animation_speed)
+        btn_prev = Button(ax_prev, "Previous")
+        btn_play = Button(ax_play, "Play")
+        btn_pause = Button(ax_pause, "Pause")
+        btn_next = Button(ax_next, "Next")
+        btn_reset = Button(ax_reset, "Reset")
+        slider_speed = Slider(ax_speed, "Speed", 0.1, 2.0, valinit=self.animation_speed)
 
         # Store references
         self.fig = fig
         self.axes = axes
+        self.metric_axes = metric_axes
         self.btn_prev = btn_prev
         self.btn_next = btn_next
         self.btn_play = btn_play
@@ -126,68 +172,86 @@ class ComparisonViewer:
 
     def _update_display(self):
         """Update all algorithm visualizations."""
-        max_steps = max(len(algo['steps']) for algo in self.algorithms)
+        max_steps = max(len(algo["steps"]) for algo in self.algorithms)
 
         for i, algo_info in enumerate(self.algorithms):
             ax = self.axes[i]
             ax.clear()
 
-            steps = algo_info['steps']
+            steps = algo_info["steps"]
             step_index = min(self.current_step, len(steps) - 1)
 
             if steps:
                 step = steps[step_index]
-                data_structure = step.get('data_structure', algo_info['data_structure'])
+                data_structure = step.get("data_structure", algo_info["data_structure"])
 
                 # Visualize this algorithm's step
-                self._visualize_step(ax, data_structure, step, algo_info['name'])
+                self._visualize_step(ax, data_structure, step, algo_info["name"])
+
+                # Update and render performance metrics
+                if i < len(self.metric_axes):
+                    metric_ax = self.metric_axes[i]
+                    metric_ax.clear()
+                    perf_panel = self.performance_panels.get(algo_info["name"])
+                    if perf_panel:
+                        # Extract metrics from all steps up to current
+                        perf_panel.metrics.reset()
+                        for s in steps[: step_index + 1]:
+                            perf_panel.extract_from_step(s)
+                        perf_panel.render(metric_ax)
 
     def _visualize_step(self, ax, data_structure, step: Dict[str, Any], name: str):
         """Visualize a single step for one algorithm."""
         import matplotlib.patches as patches
 
         state = data_structure.get_state()
-        data = state.get('data', [])
+        data = state.get("data", [])
 
         ax.set_xlim(-1, max(len(data), 10))
         ax.set_ylim(-0.5, 2.5)
-        ax.set_aspect('equal')
-        ax.axis('off')
+        ax.set_aspect("equal")
+        ax.axis("off")
 
         # Get step-specific information
-        comparing = step.get('comparing', [])
-        swapping = step.get('swapping', [])
-        sorted_indices = step.get('sorted', [])
-        current_indices = step.get('current', [])
+        comparing = step.get("comparing", [])
+        swapping = step.get("swapping", [])
+        sorted_indices = step.get("sorted", [])
+        current_indices = step.get("current", [])
 
         for j, value in enumerate(data):
             # Determine color
             if j in swapping:
-                color = 'red'
+                color = "red"
             elif j in comparing:
-                color = 'yellow'
+                color = "yellow"
             elif j in sorted_indices:
-                color = 'green'
+                color = "green"
             elif j in current_indices:
-                color = 'orange'
+                color = "orange"
             else:
-                color = 'lightblue'
+                color = "lightblue"
 
             # Draw rectangle
             rect = patches.Rectangle(
-                (j - 0.4, 0.5), 0.8, 1,
-                linewidth=2, edgecolor='black', facecolor=color
+                (j - 0.4, 0.5), 0.8, 1, linewidth=2, edgecolor="black", facecolor=color
             )
             ax.add_patch(rect)
 
             # Add value text
-            ax.text(j, 1, str(value), ha='center', va='center',
-                   fontsize=10, fontweight='bold')
+            ax.text(
+                j,
+                1,
+                str(value),
+                ha="center",
+                va="center",
+                fontsize=10,
+                fontweight="bold",
+            )
 
         # Add title
-        step_num = step.get('step_number', self.current_step + 1)
+        step_num = step.get("step_number", self.current_step + 1)
         title = f"{name}\nStep {step_num}"
-        ax.set_title(title, fontsize=11, fontweight='bold')
+        ax.set_title(title, fontsize=11, fontweight="bold")
 
     def _on_previous(self, event):
         """Handle previous button."""
@@ -197,7 +261,7 @@ class ComparisonViewer:
 
     def _on_next(self, event):
         """Handle next button."""
-        max_steps = max(len(algo['steps']) for algo in self.algorithms)
+        max_steps = max(len(algo["steps"]) for algo in self.algorithms)
         if self.current_step < max_steps - 1:
             self.current_step += 1
             self._update_display()
@@ -210,21 +274,21 @@ class ComparisonViewer:
     def _on_pause(self, event):
         """Handle pause button."""
         self.playing = False
-        if hasattr(self, 'animation') and self.animation:
+        if hasattr(self, "animation") and self.animation:
             self.animation.event_source.stop()
 
     def _on_reset(self, event):
         """Handle reset button."""
         self.playing = False
         self.current_step = 0
-        if hasattr(self, 'animation') and self.animation:
+        if hasattr(self, "animation") and self.animation:
             self.animation.event_source.stop()
         self._update_display()
 
     def _on_speed_change(self, val):
         """Handle speed change."""
         self.animation_speed = val
-        if hasattr(self, 'animation') and self.animation:
+        if hasattr(self, "animation") and self.animation:
             self.animation.event_source.interval = int(self.animation_speed * 1000)
 
     def _animate(self):
@@ -234,7 +298,7 @@ class ComparisonViewer:
         def animate_frame(frame):
             if not self.playing:
                 return
-            max_steps = max(len(algo['steps']) for algo in self.algorithms)
+            max_steps = max(len(algo["steps"]) for algo in self.algorithms)
             if self.current_step < max_steps - 1:
                 self.current_step += 1
                 self._update_display()
@@ -242,8 +306,10 @@ class ComparisonViewer:
                 self.playing = False
 
         self.animation = animation.FuncAnimation(
-            self.fig, animate_frame, interval=int(self.animation_speed * 1000),
-            repeat=False
+            self.fig,
+            animate_frame,
+            interval=int(self.animation_speed * 1000),
+            repeat=False,
         )
 
     def get_performance_metrics(self) -> Dict[str, Any]:
@@ -255,18 +321,17 @@ class ComparisonViewer:
         """
         metrics = {}
         for algo_info in self.algorithms:
-            name = algo_info['name']
-            steps = algo_info['steps']
+            name = algo_info["name"]
+            steps = algo_info["steps"]
 
             # Count operations
-            comparisons = sum(1 for s in steps if 'comparing' in s and s['comparing'])
-            swaps = sum(1 for s in steps if 'swapping' in s and s['swapping'])
+            comparisons = sum(1 for s in steps if "comparing" in s and s["comparing"])
+            swaps = sum(1 for s in steps if "swapping" in s and s["swapping"])
 
             metrics[name] = {
-                'total_steps': len(steps),
-                'comparisons': comparisons,
-                'swaps': swaps,
+                "total_steps": len(steps),
+                "comparisons": comparisons,
+                "swaps": swaps,
             }
 
         return metrics
-

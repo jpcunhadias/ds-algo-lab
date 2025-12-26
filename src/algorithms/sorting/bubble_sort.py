@@ -43,7 +43,9 @@ class BubbleSort(BaseAlgorithm):
                 yield {
                     "algorithm": self._name,
                     "step_number": step_number,
-                    "description": f"Comparing elements at indices {j} and {j + 1}",
+                    "description": f"Comparing elements at indices {j} and {j + 1}: {data[j]} vs {data[j + 1]}. "
+                    f"Outer loop iteration {i + 1}/{n}, inner loop iteration {j + 1}/{n - i - 1}. "
+                    f"Bubble sort compares adjacent elements and swaps if they're in wrong order.",
                     "data_structure": Array(data.copy()),
                     "comparing": [j, j + 1],
                     "swapping": [],
@@ -62,7 +64,9 @@ class BubbleSort(BaseAlgorithm):
                     yield {
                         "algorithm": self._name,
                         "step_number": step_number,
-                        "description": f"Swapping elements at indices {j} and {j + 1}",
+                        "description": f"Swapping elements at indices {j} and {j + 1}: {data[j + 1]} and {data[j]}. "
+                        f"Since {data[j + 1]} < {data[j]}, they are in wrong order and need to be swapped. "
+                        f"This moves the smaller element towards the beginning of the array.",
                         "data_structure": Array(data.copy()),
                         "comparing": [j, j + 1],
                         "swapping": [j, j + 1],
@@ -83,7 +87,9 @@ class BubbleSort(BaseAlgorithm):
         yield {
             "algorithm": self._name,
             "step_number": step_number,
-            "description": "Array is now sorted",
+            "description": f"Array is now sorted! Completed in {step_number} steps. "
+            f"Bubble sort works by repeatedly swapping adjacent elements until no more swaps are needed. "
+            f"Time complexity: O(n²) in worst case, O(n) if already sorted (with early termination).",
             "data_structure": Array(data.copy()),
             "comparing": [],
             "swapping": [],

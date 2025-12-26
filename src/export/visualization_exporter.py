@@ -3,10 +3,11 @@ Enhanced visualization exporter supporting multiple formats including animations
 """
 
 import os
-from typing import List, Optional, Union
 from pathlib import Path
+from typing import List, Optional
+
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+
 from ..visualization.base import BaseVisualizer
 
 
@@ -17,7 +18,7 @@ class VisualizationExporter:
 
     def __init__(self):
         """Initialize the exporter."""
-        self.supported_formats = ['png', 'pdf', 'svg', 'gif', 'html']
+        self.supported_formats = ["png", "pdf", "svg", "gif", "html"]
 
     def export(
         self,
@@ -40,17 +41,19 @@ class VisualizationExporter:
             format = self._get_format_from_filename(filename)
 
         if format not in self.supported_formats:
-            raise ValueError(f"Unsupported format: {format}. Supported: {self.supported_formats}")
+            raise ValueError(
+                f"Unsupported format: {format}. Supported: {self.supported_formats}"
+            )
 
         # Ensure directory exists
         output_path = Path(filename)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        if format == 'png':
+        if format == "png":
             return self._export_png(visualizer, filename)
-        elif format == 'pdf':
+        elif format == "pdf":
             return self._export_pdf(visualizer, filename)
-        elif format == 'svg':
+        elif format == "svg":
             return self._export_svg(visualizer, filename)
         else:
             raise ValueError(f"Format {format} not yet implemented for single exports")
@@ -61,7 +64,9 @@ class VisualizationExporter:
         visualizer: BaseVisualizer,
         filename: str,
         duration: float = 0.5,
-        format: str = 'gif',
+        format: str = "gif",
+        include_metrics: bool = True,
+        include_code: bool = False,
     ) -> str:
         """
         Export an animated sequence (GIF or HTML).
@@ -72,14 +77,20 @@ class VisualizationExporter:
             filename: Output filename
             duration: Duration per frame in seconds
             format: Export format ('gif' or 'html')
+            include_metrics: Whether to include performance metrics
+            include_code: Whether to include code overlay
 
         Returns:
             Path to saved file
         """
-        if format == 'gif':
-            return self._export_gif(steps, visualizer, filename, duration)
-        elif format == 'html':
-            return self._export_html_animation(steps, visualizer, filename, duration)
+        if format == "gif":
+            return self._export_gif(
+                steps, visualizer, filename, duration, include_metrics, include_code
+            )
+        elif format == "html":
+            return self._export_html_animation(
+                steps, visualizer, filename, duration, include_metrics, include_code
+            )
         else:
             raise ValueError(f"Unsupported animation format: {format}")
 
@@ -89,33 +100,60 @@ class VisualizationExporter:
         visualizer: BaseVisualizer,
         filename: str,
         duration: float,
+        include_metrics: bool = True,
+        include_code: bool = False,
     ) -> str:
         """Export animation as GIF."""
         try:
             from PIL import Image
         except ImportError:
-            raise ImportError("PIL/Pillow is required for GIF export. Install with: pip install pillow")
+            raise ImportError(
+                "PIL/Pillow is required for GIF export. Install with: pip install pillow"
+            )
 
         # Ensure directory exists
         output_path = Path(filename)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Create temporary directory for frames
-        import tempfile
         import shutil
+        import tempfile
+
         temp_dir = tempfile.mkdtemp()
 
         try:
             # Generate frames
             frame_files = []
+            from ..visualization.performance_panel import PerformancePanel
+
+            perf_panel = PerformancePanel() if include_metrics else None
+
             for i, step in enumerate(steps):
-                data_structure = step.get('data_structure')
+                data_structure = step.get("data_structure")
                 if data_structure:
-                    visualizer.visualize(data_structure, step)
+                    # Create figure with optional metrics panel
+                    if include_metrics and perf_panel:
+                        import matplotlib.pyplot as plt
+                        from matplotlib.gridspec import GridSpec
+
+                        fig = plt.figure(figsize=(14, 8))
+                        gs = GridSpec(1, 2, figure=fig, width_ratios=[3, 1])
+                        ax_viz = fig.add_subplot(gs[0])
+                        ax_metrics = fig.add_subplot(gs[1])
+
+                        visualizer.visualize(data_structure, step, ax=ax_viz, fig=fig)
+                        perf_panel.extract_from_step(step)
+                        perf_panel.render(ax_metrics)
+                    else:
+                        visualizer.visualize(data_structure, step)
+
                     frame_file = os.path.join(temp_dir, f"frame_{i:04d}.png")
-                    visualizer.save(frame_file)
+                    if visualizer._figure:
+                        visualizer._figure.savefig(frame_file, bbox_inches="tight")
+                    else:
+                        plt.savefig(frame_file, bbox_inches="tight")
                     frame_files.append(frame_file)
-                    plt.close('all')
+                    plt.close("all")
 
             # Create GIF from frames
             if frame_files:
@@ -133,7 +171,7 @@ class VisualizationExporter:
         finally:
             # Cleanup
             shutil.rmtree(temp_dir, ignore_errors=True)
-            plt.close('all')
+            plt.close("all")
 
     def _export_html_animation(
         self,
@@ -235,17 +273,20 @@ class VisualizationExporter:
     def _steps_to_json(self, steps: List[dict]) -> str:
         """Convert steps to JSON string."""
         import json
+
         # Simplify steps for JSON serialization
         simplified = []
         for step in steps:
-            data_structure = step.get('data_structure')
+            data_structure = step.get("data_structure")
             if data_structure:
                 state = data_structure.get_state()
-                simplified.append({
-                    'step_number': step.get('step_number', 0),
-                    'description': step.get('description', ''),
-                    'data': state.get('data', []),
-                })
+                simplified.append(
+                    {
+                        "step_number": step.get("step_number", 0),
+                        "description": step.get("description", ""),
+                        "data": state.get("data", []),
+                    }
+                )
         return json.dumps(simplified)
 
     def export_pdf_pages(
@@ -276,11 +317,11 @@ class VisualizationExporter:
 
         with PdfPages(filename) as pdf:
             for step in steps:
-                data_structure = step.get('data_structure')
+                data_structure = step.get("data_structure")
                 if data_structure:
                     visualizer.visualize(data_structure, step)
                     if visualizer._figure:
-                        pdf.savefig(visualizer._figure, bbox_inches='tight')
+                        pdf.savefig(visualizer._figure, bbox_inches="tight")
                         plt.close(visualizer._figure)
 
         return filename
@@ -293,23 +334,22 @@ class VisualizationExporter:
     def _export_pdf(self, visualizer: BaseVisualizer, filename: str) -> str:
         """Export as PDF."""
         if visualizer._figure:
-            visualizer._figure.savefig(filename, format='pdf', bbox_inches='tight')
+            visualizer._figure.savefig(filename, format="pdf", bbox_inches="tight")
         else:
-            plt.savefig(filename, format='pdf', bbox_inches='tight')
+            plt.savefig(filename, format="pdf", bbox_inches="tight")
         return filename
 
     def _export_svg(self, visualizer: BaseVisualizer, filename: str) -> str:
         """Export as SVG."""
         if visualizer._figure:
-            visualizer._figure.savefig(filename, format='svg', bbox_inches='tight')
+            visualizer._figure.savefig(filename, format="svg", bbox_inches="tight")
         else:
-            plt.savefig(filename, format='svg', bbox_inches='tight')
+            plt.savefig(filename, format="svg", bbox_inches="tight")
         return filename
 
     def _get_format_from_filename(self, filename: str) -> str:
         """Extract format from filename extension."""
-        ext = Path(filename).suffix.lower().lstrip('.')
+        ext = Path(filename).suffix.lower().lstrip(".")
         if ext in self.supported_formats:
             return ext
-        return 'png'  # Default
-
+        return "png"  # Default
