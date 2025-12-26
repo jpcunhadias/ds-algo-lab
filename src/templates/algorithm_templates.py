@@ -99,6 +99,94 @@ class AlgorithmTemplates:
 
     return -1
 """,
+
+        'merge_sort': """def merge_sort(arr):
+    \"\"\"
+    Implement Merge Sort algorithm.
+    Divide-and-conquer algorithm.
+
+    Args:
+        arr: List to sort
+
+    Returns:
+        Sorted list
+    \"\"\"
+    # Your implementation here
+    # Hint: Divide array into halves, sort recursively, then merge
+
+    return arr
+""",
+
+        'quick_sort': """def quick_sort(arr):
+    \"\"\"
+    Implement Quick Sort algorithm.
+    Divide-and-conquer algorithm with pivot.
+
+    Args:
+        arr: List to sort
+
+    Returns:
+        Sorted list
+    \"\"\"
+    # Your implementation here
+    # Hint: Choose pivot, partition array, recursively sort partitions
+
+    return arr
+""",
+
+        'heap_sort': """def heap_sort(arr):
+    \"\"\"
+    Implement Heap Sort algorithm.
+    Uses heap data structure.
+
+    Args:
+        arr: List to sort
+
+    Returns:
+        Sorted list
+    \"\"\"
+    # Your implementation here
+    # Hint: Build max heap, extract root repeatedly
+
+    return arr
+""",
+
+        'ternary_search': """def ternary_search(arr, target):
+    \"\"\"
+    Implement Ternary Search algorithm.
+    Assumes arr is sorted.
+
+    Args:
+        arr: Sorted list to search in
+        target: Value to search for
+
+    Returns:
+        Index of target if found, -1 otherwise
+    \"\"\"
+    # Your implementation here
+    # Hint: Divide search space into three parts
+    # Compare with two midpoints
+
+    return -1
+""",
+
+        'exponential_search': """def exponential_search(arr, target):
+    \"\"\"
+    Implement Exponential Search algorithm.
+    Assumes arr is sorted.
+
+    Args:
+        arr: Sorted list to search in
+        target: Value to search for
+
+    Returns:
+        Index of target if found, -1 otherwise
+    \"\"\"
+    # Your implementation here
+    # Hint: Find range exponentially, then use binary search
+
+    return -1
+""",
     }
 
     @classmethod

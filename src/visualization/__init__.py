@@ -26,5 +26,14 @@ def __getattr__(name):
     elif name == 'ComparisonViewer':
         from .comparison_viewer import ComparisonViewer
         return ComparisonViewer
+    elif name == 'TreeVisualizer':
+        from .tree_visualizer import TreeVisualizer
+        return TreeVisualizer
+    elif name == 'GraphVisualizer':
+        from .graph_visualizer import GraphVisualizer
+        return GraphVisualizer
+    elif name == 'HashTableVisualizer':
+        from .hash_table_visualizer import HashTableVisualizer
+        return HashTableVisualizer
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 

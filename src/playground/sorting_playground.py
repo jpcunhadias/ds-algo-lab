@@ -18,11 +18,17 @@ class SortingPlayground(Playground):
         from ..algorithms.sorting.bubble_sort import BubbleSort
         from ..algorithms.sorting.insertion_sort import InsertionSort
         from ..algorithms.sorting.selection_sort import SelectionSort
+        from ..algorithms.sorting.merge_sort import MergeSort
+        from ..algorithms.sorting.quick_sort import QuickSort
+        from ..algorithms.sorting.heap_sort import HeapSort
 
         self.algorithms = {
             'bubble_sort': BubbleSort,
             'insertion_sort': InsertionSort,
             'selection_sort': SelectionSort,
+            'merge_sort': MergeSort,
+            'quick_sort': QuickSort,
+            'heap_sort': HeapSort,
         }
         self.input_data: Optional[List[Any]] = None
 

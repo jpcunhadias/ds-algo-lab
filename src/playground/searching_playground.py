@@ -17,10 +17,14 @@ class SearchingPlayground(Playground):
         # Lazy imports to avoid circular dependencies
         from ..algorithms.searching.linear_search import LinearSearch
         from ..algorithms.searching.binary_search import BinarySearch
+        from ..algorithms.searching.ternary_search import TernarySearch
+        from ..algorithms.searching.exponential_search import ExponentialSearch
 
         self.algorithms = {
             'linear_search': LinearSearch,
             'binary_search': BinarySearch,
+            'ternary_search': TernarySearch,
+            'exponential_search': ExponentialSearch,
         }
         self.input_data: Optional[List[Any]] = None
         self.target_value: Optional[Any] = None

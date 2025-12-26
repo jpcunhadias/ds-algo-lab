@@ -3,7 +3,7 @@ Data Structure Visualizer
 Provides visualizations for data structures with step-by-step and interactive modes.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from .base import BaseDataStructure, BaseVisualizer
 
@@ -40,7 +40,7 @@ class DataStructureVisualizer(BaseVisualizer):
 
         # Create figure and axis
         self._figure, self._axes = plt.subplots(figsize=(10, 6))
-        self._axes.set_xlim(-1, max(len(self._current_state["data"]), 10))
+        self._axes.set_xlim(-1, max(len(self._current_state.get("data", [])), 10))
         self._axes.set_ylim(-0.5, 2)
         self._axes.set_aspect("equal")
         self._axes.axis("off")
@@ -48,60 +48,123 @@ class DataStructureVisualizer(BaseVisualizer):
         # Visualize based on data structure type
         ds_type = self._current_state["type"]
 
+        # Extract operation info from step
+        operation = step.get("operation", "normal") if step else "normal"
+        current_index = step.get("current_index", None) if step else None
+        highlighted_indices = step.get("highlighted_indices", []) if step else []
+
         if ds_type == "Array":
-            self._visualize_array(data_structure)
+            self._visualize_array(data_structure, current_index, highlighted_indices)
         elif ds_type == "LinkedList":
-            self._visualize_linked_list(data_structure)
+            self._visualize_linked_list(
+                data_structure, current_index, highlighted_indices
+            )
         elif ds_type == "Stack":
-            self._visualize_stack(data_structure)
+            self._visualize_stack(data_structure, current_index, highlighted_indices)
         elif ds_type == "Queue":
-            self._visualize_queue(data_structure)
+            self._visualize_queue(data_structure, current_index, highlighted_indices)
         elif ds_type in ["BinaryTree", "BinarySearchTree", "AVLTree"]:
-            self._visualize_tree(data_structure)
+            # Use tree visualizer for better visualization
+            from .tree_visualizer import TreeVisualizer
+
+            tree_viz = TreeVisualizer()
+            tree_viz.visualize(data_structure, step, ax=self._axes, fig=self._figure)
+            return
         elif ds_type == "Graph":
-            self._visualize_graph(data_structure)
+            # Use graph visualizer for better visualization
+            from .graph_visualizer import GraphVisualizer
+
+            graph_viz = GraphVisualizer()
+            graph_viz.visualize(data_structure, step, ax=self._axes, fig=self._figure)
+            return
         elif ds_type == "HashTable":
-            self._visualize_hash_table(data_structure)
+            # Use hash table visualizer for better visualization
+            from .hash_table_visualizer import HashTableVisualizer
+
+            ht_viz = HashTableVisualizer()
+            ht_viz.visualize(data_structure, step, ax=self._axes, fig=self._figure)
+            return
 
         # Add title
         title = f"{ds_type} Visualization"
         if step:
-            title += f" - Step {step.get('step_number', 'N/A')}"
+            if "operation" in step:
+                title += f" - {step['operation'].title()}"
+            if "step_number" in step:
+                title += f" (Step {step['step_number']})"
         self._axes.set_title(title, fontsize=14, fontweight="bold")
 
         import matplotlib.pyplot as plt
 
         plt.tight_layout()
 
-    def _visualize_array(self, data_structure: BaseDataStructure):
-        """Visualize an array."""
+    def _visualize_array(
+        self,
+        data_structure: BaseDataStructure,
+        current_index: Optional[int] = None,
+        highlighted_indices: List[int] = None,
+    ):
+        """Visualize an array with operation highlighting."""
         import matplotlib.patches as patches
+
+        if highlighted_indices is None:
+            highlighted_indices = []
 
         data = self._current_state["data"] if self._current_state is not None else []
 
         for i, value in enumerate(data):
+            # Determine color based on operation state
+            color = "lightblue"  # Default
+            edge_color = "black"
+            edge_width = 2
+
+            if i == current_index:
+                color = "yellow"  # Currently processing
+                edge_color = "red"
+                edge_width = 3
+            elif i in highlighted_indices:
+                color = "orange"  # Highlighted
+                edge_color = "darkorange"
+                edge_width = 2.5
+
             # Draw rectangle for each element
             rect = patches.Rectangle(
                 (i - 0.4, 0.5),
                 0.8,
                 1,
-                linewidth=2,
-                edgecolor="black",
-                facecolor="lightblue",
+                linewidth=edge_width,
+                edgecolor=edge_color,
+                facecolor=color,
             )
             self._axes.add_patch(rect)
 
             # Add value text
-            self._axes.text(i, 1, str(value), ha="center", va="center", fontsize=12)
+            self._axes.text(
+                i,
+                1,
+                str(value),
+                ha="center",
+                va="center",
+                fontsize=12,
+                fontweight="bold",
+            )
 
             # Add index text
             self._axes.text(
                 i, 0.2, str(i), ha="center", va="center", fontsize=10, color="gray"
             )
 
-    def _visualize_linked_list(self, data_structure: BaseDataStructure):
-        """Visualize a linked list."""
+    def _visualize_linked_list(
+        self,
+        data_structure: BaseDataStructure,
+        current_index: Optional[int] = None,
+        highlighted_indices: List[int] = None,
+    ):
+        """Visualize a linked list with operation highlighting."""
         import matplotlib.patches as patches
+
+        if highlighted_indices is None:
+            highlighted_indices = []
 
         data = self._current_state["data"] if self._current_state is not None else []
 
@@ -111,22 +174,54 @@ class DataStructureVisualizer(BaseVisualizer):
 
         x_pos = 0
         for i, value in enumerate(data):
+            # Determine color based on operation state
+            color = "lightgreen"  # Default
+            edge_color = "black"
+            edge_width = 2
+
+            if i == current_index:
+                color = "yellow"  # Currently processing
+                edge_color = "red"
+                edge_width = 3
+            elif i in highlighted_indices:
+                color = "orange"  # Highlighted
+                edge_color = "darkorange"
+                edge_width = 2.5
+
             # Draw node circle
             circle = patches.Circle(
-                (x_pos, 1), 0.3, linewidth=2, edgecolor="black", facecolor="lightgreen"
+                (x_pos, 1),
+                0.3,
+                linewidth=edge_width,
+                edgecolor=edge_color,
+                facecolor=color,
             )
             self._axes.add_patch(circle)
 
             # Add value text
-            self._axes.text(x_pos, 1, str(value), ha="center", va="center", fontsize=10)
+            self._axes.text(
+                x_pos,
+                1,
+                str(value),
+                ha="center",
+                va="center",
+                fontsize=10,
+                fontweight="bold",
+            )
 
             # Draw arrow to next node (if not last)
             if i < len(data) - 1:
+                arrow_color = "black"
+                arrow_width = 2
+                if i in highlighted_indices or (i + 1) in highlighted_indices:
+                    arrow_color = "orange"
+                    arrow_width = 2.5
+
                 self._axes.annotate(
                     "",
                     xy=(x_pos + 0.6, 1),
                     xytext=(x_pos + 0.3, 1),
-                    arrowprops=dict(arrowstyle="->", lw=2, color="black"),
+                    arrowprops=dict(arrowstyle="->", lw=arrow_width, color=arrow_color),
                 )
 
             x_pos += 1.2
@@ -136,9 +231,17 @@ class DataStructureVisualizer(BaseVisualizer):
             x_pos - 0.3, 1, "NULL", ha="left", va="center", fontsize=10, style="italic"
         )
 
-    def _visualize_stack(self, data_structure: BaseDataStructure):
-        """Visualize a stack."""
+    def _visualize_stack(
+        self,
+        data_structure: BaseDataStructure,
+        current_index: Optional[int] = None,
+        highlighted_indices: List[int] = None,
+    ):
+        """Visualize a stack with operation highlighting."""
         import matplotlib.patches as patches
+
+        if highlighted_indices is None:
+            highlighted_indices = []
 
         data = self._current_state["data"] if self._current_state is not None else []
 
@@ -149,17 +252,43 @@ class DataStructureVisualizer(BaseVisualizer):
         # Draw stack elements from bottom to top
         for i, value in enumerate(data):
             y_pos = i * 0.5
+
+            # Determine color based on operation state
+            color = "lightcoral"  # Default
+            edge_color = "black"
+            edge_width = 2
+
+            if i == current_index:
+                color = "yellow"  # Currently processing
+                edge_color = "red"
+                edge_width = 3
+            elif i in highlighted_indices:
+                color = "orange"  # Highlighted
+                edge_color = "darkorange"
+                edge_width = 2.5
+            elif i == len(data) - 1:
+                # Top element
+                color = "lightcoral"
+                edge_color = "red"
+                edge_width = 2.5
+
             rect = patches.Rectangle(
                 (-0.4, y_pos),
                 0.8,
                 0.4,
-                linewidth=2,
-                edgecolor="black",
-                facecolor="lightcoral",
+                linewidth=edge_width,
+                edgecolor=edge_color,
+                facecolor=color,
             )
             self._axes.add_patch(rect)
             self._axes.text(
-                0, y_pos + 0.2, str(value), ha="center", va="center", fontsize=11
+                0,
+                y_pos + 0.2,
+                str(value),
+                ha="center",
+                va="center",
+                fontsize=11,
+                fontweight="bold",
             )
 
         # Add "TOP" label
@@ -175,9 +304,17 @@ class DataStructureVisualizer(BaseVisualizer):
                 color="red",
             )
 
-    def _visualize_queue(self, data_structure: BaseDataStructure):
-        """Visualize a queue."""
+    def _visualize_queue(
+        self,
+        data_structure: BaseDataStructure,
+        current_index: Optional[int] = None,
+        highlighted_indices: List[int] = None,
+    ):
+        """Visualize a queue with operation highlighting."""
         import matplotlib.patches as patches
+
+        if highlighted_indices is None:
+            highlighted_indices = []
 
         data = self._current_state["data"] if self._current_state is not None else []
 
@@ -187,16 +324,48 @@ class DataStructureVisualizer(BaseVisualizer):
 
         # Draw queue elements from front to rear
         for i, value in enumerate(data):
+            # Determine color based on operation state
+            color = "lightyellow"  # Default
+            edge_color = "black"
+            edge_width = 2
+
+            if i == current_index:
+                color = "yellow"  # Currently processing
+                edge_color = "red"
+                edge_width = 3
+            elif i in highlighted_indices:
+                color = "orange"  # Highlighted
+                edge_color = "darkorange"
+                edge_width = 2.5
+            elif i == 0:
+                # Front element
+                color = "lightgreen"
+                edge_color = "green"
+                edge_width = 2.5
+            elif i == len(data) - 1:
+                # Rear element
+                color = "lightblue"
+                edge_color = "blue"
+                edge_width = 2.5
+
             rect = patches.Rectangle(
                 (i - 0.4, 0.5),
                 0.8,
                 1,
-                linewidth=2,
-                edgecolor="black",
-                facecolor="lightyellow",
+                linewidth=edge_width,
+                edgecolor=edge_color,
+                facecolor=color,
             )
             self._axes.add_patch(rect)
-            self._axes.text(i, 1, str(value), ha="center", va="center", fontsize=11)
+            self._axes.text(
+                i,
+                1,
+                str(value),
+                ha="center",
+                va="center",
+                fontsize=11,
+                fontweight="bold",
+            )
 
         # Add FRONT and REAR labels
         if data:

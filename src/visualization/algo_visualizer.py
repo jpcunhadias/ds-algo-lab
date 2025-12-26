@@ -87,46 +87,264 @@ class AlgorithmVisualizer(BaseVisualizer):
         state = data_structure.get_state()
         data = state.get("data", [])
 
+        # Get algorithm name to determine visualization style
+        algo_name = step.get("algorithm", "").lower()
+
         # Get step-specific information
         comparing = step.get("comparing", [])
         swapping = step.get("swapping", [])
         sorted_indices = step.get("sorted", [])
         current_indices = step.get("current", [])
 
-        for i, value in enumerate(data):
-            # Determine color based on state
-            if i in swapping:
-                color = "red"  # Elements being swapped
-            elif i in comparing:
-                color = "yellow"  # Elements being compared
-            elif i in sorted_indices:
-                color = "green"  # Already sorted
-            elif i in current_indices:
-                color = "orange"  # Current position
-            else:
-                color = "lightblue"  # Default
+        # Merge Sort specific visualization
+        if "merge" in algo_name:
+            left_range = step.get("left_range")
+            right_range = step.get("right_range")
 
-            # Draw rectangle
-            rect = patches.Rectangle(
-                (i - 0.4, 0.5), 0.8, 1, linewidth=2, edgecolor="black", facecolor=color
-            )
-            self._axes.add_patch(rect)
+            for i, value in enumerate(data):
+                # Determine color based on state
+                if i in swapping:
+                    color = "red"  # Elements being swapped
+                elif i in comparing:
+                    color = "yellow"  # Elements being compared
+                elif i in sorted_indices:
+                    color = "green"  # Already sorted
+                elif left_range and right_range:
+                    left_start, left_end = left_range
+                    right_start, right_end = right_range
+                    if left_start <= i <= left_end:
+                        color = "lightcoral"  # Left subarray
+                    elif right_start <= i <= right_end:
+                        color = "lightblue"  # Right subarray
+                    else:
+                        color = "lightgray"  # Outside merge range
+                elif i in current_indices:
+                    color = "orange"  # Current position
+                else:
+                    color = "lightblue"  # Default
 
-            # Add value text
-            self._axes.text(
-                i,
-                1,
-                str(value),
-                ha="center",
-                va="center",
-                fontsize=12,
-                fontweight="bold",
-            )
+                # Draw rectangle
+                rect = patches.Rectangle(
+                    (i - 0.4, 0.5),
+                    0.8,
+                    1,
+                    linewidth=2,
+                    edgecolor="black",
+                    facecolor=color,
+                )
+                self._axes.add_patch(rect)
 
-            # Add index
-            self._axes.text(
-                i, 0.2, str(i), ha="center", va="center", fontsize=10, color="gray"
-            )
+                # Add value text
+                self._axes.text(
+                    i,
+                    1,
+                    str(value),
+                    ha="center",
+                    va="center",
+                    fontsize=12,
+                    fontweight="bold",
+                )
+
+                # Add index
+                self._axes.text(
+                    i, 0.2, str(i), ha="center", va="center", fontsize=10, color="gray"
+                )
+
+            # Add merge range indicators
+            if left_range and right_range:
+                left_start, left_end = left_range
+                right_start, right_end = right_range
+                # Draw brackets for merge ranges
+                self._axes.plot(
+                    [left_start - 0.5, left_start - 0.5], [0.3, 1.7], "k-", linewidth=2
+                )
+                self._axes.plot(
+                    [left_end + 0.5, left_end + 0.5], [0.3, 1.7], "k-", linewidth=2
+                )
+                self._axes.plot(
+                    [right_start - 0.5, right_start - 0.5],
+                    [0.3, 1.7],
+                    "k-",
+                    linewidth=2,
+                )
+                self._axes.plot(
+                    [right_end + 0.5, right_end + 0.5], [0.3, 1.7], "k-", linewidth=2
+                )
+
+        # Quick Sort specific visualization
+        elif "quick" in algo_name:
+            pivot = step.get("pivot")
+            partition = step.get("partition")
+
+            for i, value in enumerate(data):
+                # Determine color based on state
+                if i == pivot:
+                    color = "purple"  # Pivot element
+                elif i in swapping:
+                    color = "red"  # Elements being swapped
+                elif i in comparing:
+                    color = "yellow"  # Elements being compared
+                elif i in sorted_indices:
+                    color = "green"  # Already sorted (pivot in final position)
+                elif partition:
+                    part_low = partition.get("low", -1)
+                    part_high = partition.get("high", -1)
+                    if part_low <= i <= part_high:
+                        color = "lightblue"  # Partition range
+                    else:
+                        color = "lightgray"  # Outside partition
+                elif i in current_indices:
+                    color = "orange"  # Current position
+                else:
+                    color = "lightblue"  # Default
+
+                # Draw rectangle
+                rect = patches.Rectangle(
+                    (i - 0.4, 0.5),
+                    0.8,
+                    1,
+                    linewidth=2,
+                    edgecolor="black",
+                    facecolor=color,
+                )
+                self._axes.add_patch(rect)
+
+                # Add value text
+                self._axes.text(
+                    i,
+                    1,
+                    str(value),
+                    ha="center",
+                    va="center",
+                    fontsize=12,
+                    fontweight="bold",
+                )
+
+                # Add index
+                self._axes.text(
+                    i, 0.2, str(i), ha="center", va="center", fontsize=10, color="gray"
+                )
+
+            # Add pivot indicator
+            if pivot is not None:
+                self._axes.text(
+                    pivot,
+                    1.8,
+                    "PIVOT",
+                    ha="center",
+                    va="center",
+                    fontsize=10,
+                    fontweight="bold",
+                    color="purple",
+                )
+
+        # Heap Sort specific visualization
+        elif "heap" in algo_name:
+            heap_info = step.get("heap")
+
+            for i, value in enumerate(data):
+                # Determine color based on state
+                if i in swapping:
+                    color = "red"  # Elements being swapped
+                elif i in comparing:
+                    color = "yellow"  # Elements being compared
+                elif i in sorted_indices:
+                    color = "green"  # Already sorted (extracted from heap)
+                elif heap_info:
+                    heap_indices = heap_info.get("heap_indices", [])
+                    root = heap_info.get("root")
+                    left = heap_info.get("left")
+                    right = heap_info.get("right")
+                    if i == root:
+                        color = "purple"  # Root being heapified
+                    elif i == left or i == right:
+                        color = "orange"  # Children being compared
+                    elif i in heap_indices:
+                        color = "lightblue"  # In heap
+                    else:
+                        color = "lightgray"  # Outside heap
+                elif i in current_indices:
+                    color = "orange"  # Current position
+                else:
+                    color = "lightblue"  # Default
+
+                # Draw rectangle
+                rect = patches.Rectangle(
+                    (i - 0.4, 0.5),
+                    0.8,
+                    1,
+                    linewidth=2,
+                    edgecolor="black",
+                    facecolor=color,
+                )
+                self._axes.add_patch(rect)
+
+                # Add value text
+                self._axes.text(
+                    i,
+                    1,
+                    str(value),
+                    ha="center",
+                    va="center",
+                    fontsize=12,
+                    fontweight="bold",
+                )
+
+                # Add index
+                self._axes.text(
+                    i, 0.2, str(i), ha="center", va="center", fontsize=10, color="gray"
+                )
+
+                # Draw parent-child relationships for heap
+                if heap_info and i in heap_info.get("heap_indices", []):
+                    parent_idx = (i - 1) // 2
+                    if parent_idx >= 0 and parent_idx < len(data):
+                        # Draw line from parent to child
+                        self._axes.plot(
+                            [parent_idx, i], [1.3, 1.3], "k-", linewidth=1, alpha=0.3
+                        )
+
+        # Default visualization for other sorting algorithms
+        else:
+            for i, value in enumerate(data):
+                # Determine color based on state
+                if i in swapping:
+                    color = "red"  # Elements being swapped
+                elif i in comparing:
+                    color = "yellow"  # Elements being compared
+                elif i in sorted_indices:
+                    color = "green"  # Already sorted
+                elif i in current_indices:
+                    color = "orange"  # Current position
+                else:
+                    color = "lightblue"  # Default
+
+                # Draw rectangle
+                rect = patches.Rectangle(
+                    (i - 0.4, 0.5),
+                    0.8,
+                    1,
+                    linewidth=2,
+                    edgecolor="black",
+                    facecolor=color,
+                )
+                self._axes.add_patch(rect)
+
+                # Add value text
+                self._axes.text(
+                    i,
+                    1,
+                    str(value),
+                    ha="center",
+                    va="center",
+                    fontsize=12,
+                    fontweight="bold",
+                )
+
+                # Add index
+                self._axes.text(
+                    i, 0.2, str(i), ha="center", va="center", fontsize=10, color="gray"
+                )
 
         # Add legend
         legend_elements = [
@@ -149,39 +367,192 @@ class AlgorithmVisualizer(BaseVisualizer):
         target = step.get("target", None)
         current_index = step.get("current_index", -1)
         found_index = step.get("found_index", -1)
+        algo_name = step.get("algorithm", "").lower()
 
-        for i, value in enumerate(data):
-            # Determine color
-            if i == found_index:
-                color = "green"  # Found
-            elif i == current_index:
-                color = "yellow"  # Currently checking
-            elif target is not None and value == target:
-                color = "orange"  # Potential match
-            else:
-                color = "lightblue"  # Default
+        # Ternary Search specific visualization
+        if "ternary" in algo_name:
+            left = step.get("left", 0)
+            right = step.get("right", len(data) - 1)
+            mid1 = step.get("mid1", -1)
+            mid2 = step.get("mid2", -1)
 
-            # Draw rectangle
-            rect = patches.Rectangle(
-                (i - 0.4, 0.5), 0.8, 1, linewidth=2, edgecolor="black", facecolor=color
-            )
-            self._axes.add_patch(rect)
+            for i, value in enumerate(data):
+                # Determine color
+                if i == found_index:
+                    color = "green"  # Found
+                elif i == mid1 or i == mid2:
+                    color = "yellow"  # Currently checking (mid1 or mid2)
+                elif i == current_index:
+                    color = "orange"  # Current position
+                elif left <= i <= right:
+                    color = "lightblue"  # Search range
+                else:
+                    color = "lightgray"  # Outside search range
 
-            # Add value text
-            self._axes.text(
-                i,
-                1,
-                str(value),
-                ha="center",
-                va="center",
-                fontsize=12,
-                fontweight="bold",
-            )
+                # Draw rectangle
+                rect = patches.Rectangle(
+                    (i - 0.4, 0.5),
+                    0.8,
+                    1,
+                    linewidth=2,
+                    edgecolor="black",
+                    facecolor=color,
+                )
+                self._axes.add_patch(rect)
 
-            # Add index
-            self._axes.text(
-                i, 0.2, str(i), ha="center", va="center", fontsize=10, color="gray"
-            )
+                # Add value text
+                self._axes.text(
+                    i,
+                    1,
+                    str(value),
+                    ha="center",
+                    va="center",
+                    fontsize=12,
+                    fontweight="bold",
+                )
+
+                # Add index
+                self._axes.text(
+                    i, 0.2, str(i), ha="center", va="center", fontsize=10, color="gray"
+                )
+
+                # Mark mid1 and mid2
+                if i == mid1:
+                    self._axes.text(
+                        i,
+                        1.8,
+                        "mid1",
+                        ha="center",
+                        va="center",
+                        fontsize=9,
+                        fontweight="bold",
+                        color="darkorange",
+                    )
+                if i == mid2:
+                    self._axes.text(
+                        i,
+                        1.8,
+                        "mid2",
+                        ha="center",
+                        va="center",
+                        fontsize=9,
+                        fontweight="bold",
+                        color="darkorange",
+                    )
+
+        # Exponential Search specific visualization
+        elif "exponential" in algo_name:
+            left = step.get("left", 0)
+            right = step.get("right", len(data) - 1)
+            range_start = step.get("range_start", -1)
+            range_end = step.get("range_end", -1)
+            phase = step.get("phase", "")
+
+            for i, value in enumerate(data):
+                # Determine color
+                if i == found_index:
+                    color = "green"  # Found
+                elif i == current_index:
+                    color = "yellow"  # Currently checking
+                elif (
+                    range_start != -1
+                    and range_end != -1
+                    and range_start <= i <= range_end
+                ):
+                    if phase == "exponential_range_finding":
+                        color = "lightcoral"  # Exponential range
+                    else:
+                        color = "lightblue"  # Binary search range
+                elif target is not None and value == target:
+                    color = "orange"  # Potential match
+                else:
+                    color = "lightgray"  # Outside range
+
+                # Draw rectangle
+                rect = patches.Rectangle(
+                    (i - 0.4, 0.5),
+                    0.8,
+                    1,
+                    linewidth=2,
+                    edgecolor="black",
+                    facecolor=color,
+                )
+                self._axes.add_patch(rect)
+
+                # Add value text
+                self._axes.text(
+                    i,
+                    1,
+                    str(value),
+                    ha="center",
+                    va="center",
+                    fontsize=12,
+                    fontweight="bold",
+                )
+
+                # Add index
+                self._axes.text(
+                    i, 0.2, str(i), ha="center", va="center", fontsize=10, color="gray"
+                )
+
+            # Show phase info
+            if phase:
+                phase_text = phase.replace("_", " ").title()
+                self._axes.text(
+                    len(data) / 2,
+                    1.8,
+                    f"Phase: {phase_text}",
+                    ha="center",
+                    va="center",
+                    fontsize=10,
+                    fontweight="bold",
+                    color="purple",
+                )
+
+        # Default visualization for other searching algorithms
+        else:
+            left = step.get("left", 0)
+            right = step.get("right", len(data) - 1)
+
+            for i, value in enumerate(data):
+                # Determine color
+                if i == found_index:
+                    color = "green"  # Found
+                elif i == current_index:
+                    color = "yellow"  # Currently checking
+                elif left <= i <= right:
+                    color = "lightblue"  # Search range
+                elif target is not None and value == target:
+                    color = "orange"  # Potential match
+                else:
+                    color = "lightgray"  # Outside search range
+
+                # Draw rectangle
+                rect = patches.Rectangle(
+                    (i - 0.4, 0.5),
+                    0.8,
+                    1,
+                    linewidth=2,
+                    edgecolor="black",
+                    facecolor=color,
+                )
+                self._axes.add_patch(rect)
+
+                # Add value text
+                self._axes.text(
+                    i,
+                    1,
+                    str(value),
+                    ha="center",
+                    va="center",
+                    fontsize=12,
+                    fontweight="bold",
+                )
+
+                # Add index
+                self._axes.text(
+                    i, 0.2, str(i), ha="center", va="center", fontsize=10, color="gray"
+                )
 
         # Add target value info
         if target is not None:

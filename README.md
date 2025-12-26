@@ -54,6 +54,15 @@ dsa-lab playground sorting
 # Searching playground
 dsa-lab playground searching
 
+# Tree playground (BST)
+dsa-lab playground tree --type bst
+
+# Graph playground
+dsa-lab playground graph
+
+# Hash table playground
+dsa-lab playground hash_table
+
 # Run a demonstration
 dsa-lab demo bubble-sort
 
@@ -135,6 +144,73 @@ arr = builder.to_array()
 print(arr.to_list())  # [5, 2, 8, 1, 9]
 ```
 
+#### Tree Playground
+
+```python
+from src.playground.tree_playground import TreePlayground
+
+# Create BST playground
+pg = TreePlayground(tree_type="bst")
+
+# Insert values
+pg.set_input([50, 30, 70, 20, 40, 60, 80])
+
+# Perform operations
+steps = pg.insert(35)
+pg.visualize(steps, interactive=True)
+
+# Traverse tree
+steps = pg.traverse("inorder")
+pg.visualize(steps, interactive=True)
+
+# Search for value
+steps = pg.search(40)
+pg.visualize(steps, interactive=True)
+```
+
+#### Graph Playground
+
+```python
+from src.playground.graph_playground import GraphPlayground
+
+# Create graph
+pg = GraphPlayground(directed=False)
+
+# Add vertices and edges
+pg.graph.add_vertex("A")
+pg.graph.add_vertex("B")
+pg.graph.add_edge("A", "B")
+
+# Run BFS
+steps = pg.run_bfs("A")
+pg.visualize(steps, interactive=True)
+
+# Run DFS
+steps = pg.run_dfs("A")
+pg.visualize(steps, interactive=True)
+```
+
+#### Hash Table Playground
+
+```python
+from src.playground.hash_table_playground import HashTablePlayground
+
+# Create hash table
+pg = HashTablePlayground(initial_capacity=8)
+
+# Insert key-value pairs
+steps = pg.insert("apple", "red")
+pg.visualize(steps, interactive=True)
+
+# Get value
+steps = pg.get("apple")
+pg.visualize(steps, interactive=True)
+
+# Delete key
+steps = pg.delete("apple")
+pg.visualize(steps, interactive=True)
+```
+
 #### Testing Implementations
 
 ```python
@@ -205,6 +281,9 @@ pytest tests/
 ### Playgrounds
 - **Sorting Playground**: Explore sorting algorithms with different input types
 - **Searching Playground**: Visualize search algorithms on sorted arrays
+- **Tree Playground**: Interactive tree operations (Binary Tree, BST, AVL Tree) with insert, delete, search, and traversals
+- **Graph Playground**: Graph operations with BFS/DFS visualization
+- **Hash Table Playground**: Hash table operations with collision visualization
 - **Input Generators**: Random, sorted, reversed, nearly sorted, duplicates, patterns
 
 ### Comparison Tools
@@ -227,6 +306,10 @@ See the `examples/` directory for usage examples:
 - `demo_interactive_controls.py` - Visualization controls
 - `demo_comparison.py` - Algorithm comparison
 - `demo_all_sorting.py` - Sorting algorithm demonstrations
+- `demo_tree_playground.py` - Tree operations and traversals
+- `demo_graph_playground.py` - Graph operations and BFS/DFS
+- `demo_hash_table_playground.py` - Hash table operations and collisions
+- `demo_traversals.py` - Tree and graph traversal demonstrations
 
 ## Philosophy
 
@@ -240,9 +323,33 @@ This platform is designed as a **visual learning playground** where users can:
 
 Unlike LeetCode-style platforms, the focus is on **demonstration and exploration** rather than problem-solving exercises.
 
+## Data Structure Playgrounds
+
+### Tree Playground
+Interactive exploration of tree data structures:
+- **Binary Tree**: Basic tree operations
+- **Binary Search Tree (BST)**: BST property maintenance
+- **AVL Tree**: Self-balancing tree with rotations
+- **Operations**: Insert, delete, search with step-by-step visualization
+- **Traversals**: In-order, pre-order, post-order, level-order with animation
+
+### Graph Playground
+Interactive graph exploration:
+- **Directed/Undirected Graphs**: Create and manipulate graphs
+- **BFS/DFS Algorithms**: Visualize graph traversal algorithms
+- **Vertex/Edge Operations**: Add/remove vertices and edges
+- **Path Visualization**: See traversal paths and visited nodes
+
+### Hash Table Playground
+Interactive hash table exploration:
+- **Collision Handling**: Visualize chaining collision resolution
+- **Hash Function**: See hash calculations in action
+- **Load Factor**: Monitor load factor and automatic resizing
+- **Operations**: Insert, get, delete with step-by-step visualization
+
 ## Future Enhancements
 
 - Additional advanced algorithms and data structures
-- Enhanced tree and graph visualizations
+- Interactive GUI for data structure manipulation
 - More playground environments
 - Web interface (optional)

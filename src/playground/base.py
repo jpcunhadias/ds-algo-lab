@@ -133,6 +133,7 @@ class Playground(ABC):
         self.input_data: Optional[List[Any]] = None
         self.current_algorithm = None
         self.visualization_callback: Optional[Callable] = None
+        self._initialization_steps: Optional[List[Dict[str, Any]]] = None
 
     @abstractmethod
     def set_input(self, data: List[Any]) -> None:
@@ -167,6 +168,24 @@ class Playground(ABC):
             steps: List of algorithm steps
         """
         pass
+
+    def visualize_initialization(self, interactive: bool = True, auto_show: bool = True) -> None:
+        """
+        Visualize how input data was transformed into the data structure.
+
+        This method should be overridden by subclasses to provide
+        initialization visualization specific to each data structure type.
+
+        Args:
+            interactive: Whether to use interactive controls (True) or animated playback (False)
+            auto_show: Whether to automatically show the visualization (for CLI integration)
+        """
+        if self._initialization_steps is None or len(self._initialization_steps) == 0:
+            print("No initialization steps available to visualize.")
+            return
+
+        # Default implementation - subclasses should override
+        self.visualize(self._initialization_steps)
 
     def get_available_algorithms(self) -> List[str]:
         """
